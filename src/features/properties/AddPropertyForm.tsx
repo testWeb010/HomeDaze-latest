@@ -41,7 +41,8 @@ const AddPropertyForm: React.FC = () => {
     images: [],
     availableFrom: '',
     rules: [],
-    nearbyPlaces: []
+    nearbyPlaces: [],
+    video: null // Add video to formData
   });
 
   const [errors, setErrors] = useState<PropertyFormErrors>({});
@@ -144,6 +145,21 @@ const AddPropertyForm: React.FC = () => {
     }));
   };
 
+  // Add video to formData
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, video: file }));
+    }
+  };
+
+  const removeVideo = () => {
+    setFormData(prev => ({
+      ...prev,
+      video: null
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -158,7 +174,7 @@ const AddPropertyForm: React.FC = () => {
 
     // Append text/number/boolean data
     Object.keys(formData).forEach(key => {
-        if (key !== 'images' && key !== 'rules' && key !== 'nearbyPlaces') {
+        if (key !== 'images' && key !== 'rules' && key !== 'nearbyPlaces' && key !== 'video') {
             formPayload.append(key, formData[key as keyof PropertyFormData] as string | Blob);
         }
     });
@@ -168,6 +184,10 @@ const AddPropertyForm: React.FC = () => {
     formPayload.append('rules', JSON.stringify(formData.rules));
     formPayload.append('nearbyPlaces', JSON.stringify(formData.nearbyPlaces));
 
+    // Append video file
+    if (formData.video) {
+      formPayload.append('video', formData.video);
+    }
 
     // Append image files
     formData.images.forEach((image) => {
@@ -236,7 +256,8 @@ const AddPropertyForm: React.FC = () => {
           images: [],
           availableFrom: '',
           rules: [],
-          nearbyPlaces: []
+          nearbyPlaces: [],
+          video: null // Reset video
         });
         setErrors({}); // Clear errors on success
       }, 3000); // Auto-hide success message after 3 seconds
@@ -282,7 +303,8 @@ const AddPropertyForm: React.FC = () => {
             images: [],
             availableFrom: '',
             rules: [],
-            nearbyPlaces: []
+            nearbyPlaces: [],
+            video: null // Reset video
           });
           setErrors({});
     }} />;
@@ -346,6 +368,24 @@ const AddPropertyForm: React.FC = () => {
             handleImageUpload={handleImageUpload}
             removeImage={removeImage}
           />
+
+          {/* Property Video (optional) */}
+          <div className="mt-6">
+            <label className="block mb-2 font-medium">Property Video (optional)</label>
+            <input type="file" accept="video/mp4,video/webm,video/quicktime" onChange={handleVideoUpload} className="mb-4" />
+            {formData.video && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">{formData.video.name}</span>
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="text-red-600 hover:text-red-900 text-sm"
+                >
+                  Remove Video
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Submit Button */}
           <SubmitButton isSubmitting={isSubmitting} />
