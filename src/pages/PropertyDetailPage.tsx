@@ -4,10 +4,17 @@ import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Heart, Share2 } from 'lucide-react';
 import PricingCard from '../features/properties/PricingCard';
 import { Property } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import { propertyService, Property as PropertyType } from '../services/propertyService';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [isFavorited, setIsFavorited] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState<Partial<PropertyType>>({});
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   // Mock property data - fix amenities type
   const property: Property = {
@@ -74,6 +81,33 @@ const PropertyDetailPage: React.FC = () => {
     window.history.back();
   };
 
+  const handleEdit = () => {
+    setForm({ ...property });
+    setShowModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this property?')) return;
+    try {
+      await propertyService.deleteProperty(property._id!);
+      setFeedback('Property deleted successfully.');
+      setTimeout(() => window.location.href = '/properties', 1000);
+    } catch (e: any) {
+      setFeedback(e.message || 'Failed to delete property');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await propertyService.updateProperty(property._id!, form);
+      setFeedback('Property updated successfully.');
+      setShowModal(false);
+    } catch (e: any) {
+      setFeedback(e.message || 'Failed to update property');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -105,6 +139,30 @@ const PropertyDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mr-2" onClick={handleEdit}>Edit</button>
+          <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onClick={handleDelete}>Delete</button>
+        </div>
+      )}
+      {feedback && <div className="text-center text-green-600 mb-2">{feedback}</div>}
+      {/* Property Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">Edit Property</h2>
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Title" value={form.title || ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Location" value={form.location || ''} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} required />
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Price" type="number" value={form.price || 0} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} required />
+            <textarea className="w-full mb-3 px-3 py-2 border rounded" placeholder="Description" value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} required />
+            <div className="flex justify-end gap-2">
+              <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

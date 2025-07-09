@@ -5,6 +5,8 @@ import PropertyFilterSidebar from './PropertyFilterSidebar';
 import PropertyListContainer from './PropertyListContainer';
 import LoadingSpinner from '../LoadingSpinner';
 import { PropertySearchParams } from '../../services/propertyService';
+import { useAuth } from '../../hooks/useAuth';
+import { propertyService, Property } from '../../services/propertyService';
 
 interface LocalSearchFilters {
   propertyType: string;
@@ -36,6 +38,12 @@ const AllPropertiesPage: React.FC<AllPropertiesPageProps> = ({ onPropertyClick }
     amenities: [],
     availableFrom: ''
   });
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+  const [showModal, setShowModal] = useState(false);
+  const [editProperty, setEditProperty] = useState<Property | null>(null);
+  const [form, setForm] = useState<Partial<Property>>({});
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   // API hooks
   const propertiesHook = useProperties({
@@ -103,8 +111,57 @@ const AllPropertiesPage: React.FC<AllPropertiesPageProps> = ({ onPropertyClick }
     });
   };
 
+  const handleCreate = () => {
+    setEditProperty(null);
+    setForm({});
+    setShowModal(true);
+  };
+
+  const handleEdit = (property: Property) => {
+    setEditProperty(property);
+    setForm({ ...property });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this property?')) return;
+    try {
+      await propertyService.deleteProperty(id);
+      setFeedback('Property deleted successfully.');
+      propertiesHook.loadPage(1);
+    } catch (e: any) {
+      setFeedback(e.message || 'Failed to delete property');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editProperty) {
+        await propertyService.updateProperty(editProperty._id!, form);
+        setFeedback('Property updated successfully.');
+      } else {
+        await propertyService.createProperty(form);
+        setFeedback('Property created successfully.');
+      }
+      setShowModal(false);
+      propertiesHook.loadPage(1);
+    } catch (e: any) {
+      setFeedback(e.message || 'Failed to save property');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Admin Controls */}
+      {isAdmin && (
+        <div className="flex justify-end mb-4">
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onClick={handleCreate}>
+            + Create Property
+          </button>
+        </div>
+      )}
+      {feedback && <div className="text-center text-green-600 mb-2">{feedback}</div>}
       {/* Search Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -192,10 +249,28 @@ const AllPropertiesPage: React.FC<AllPropertiesPageProps> = ({ onPropertyClick }
               filters={filters}
               loading={propertiesHook.loading || propertyFilters.loading}
               error={propertiesHook.error || propertyFilters.error}
+              onEdit={isAdmin ? handleEdit : undefined}
+              onDelete={isAdmin ? handleDelete : undefined}
             />
           )}
         </div>
       </div>
+      {/* Property Create/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">{editProperty ? 'Edit Property' : 'Create Property'}</h2>
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Title" value={form.title || ''} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Location" value={form.location || ''} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} required />
+            <input className="w-full mb-3 px-3 py-2 border rounded" placeholder="Price" type="number" value={form.price || 0} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} required />
+            <textarea className="w-full mb-3 px-3 py-2 border rounded" placeholder="Description" value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} required />
+            <div className="flex justify-end gap-2">
+              <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

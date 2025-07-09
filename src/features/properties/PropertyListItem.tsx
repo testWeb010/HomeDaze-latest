@@ -1,13 +1,15 @@
 
 import React from 'react';
-import { MapPin, MessageCircle, Phone, Star } from 'lucide-react';
+import { MapPin, MessageCircle, Phone, Star, Edit, Trash2 } from 'lucide-react';
 import { Property } from '../../types';
 
 interface PropertyListItemProps {
   property: Property;
+  onEdit?: (property: Property) => void;
+  onDelete?: (id: string) => void;
 }
 
-const PropertyListItem: React.FC<PropertyListItemProps> = ({ property }) => {
+const PropertyListItem: React.FC<PropertyListItemProps> = ({ property, onEdit, onDelete }) => {
   const amenityIcons = [
     { icon: '⚡', name: 'Electricity', available: true },
     { icon: '🍳', name: 'Kitchen', available: true },
@@ -44,7 +46,22 @@ const PropertyListItem: React.FC<PropertyListItemProps> = ({ property }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden relative">
+      {/* Admin Controls */}
+      {(onEdit || onDelete) && (
+        <div className="absolute top-4 right-4 flex space-x-2 z-10">
+          {onEdit && (
+            <button onClick={e => { e.stopPropagation(); onEdit(property); }} className="p-1 bg-blue-100 hover:bg-blue-200 rounded-full">
+              <Edit className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={e => { e.stopPropagation(); onDelete(property._id!); }} className="p-1 bg-red-100 hover:bg-red-200 rounded-full">
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row">
         {/* Image Section */}
         <div className="md:w-1/3">
