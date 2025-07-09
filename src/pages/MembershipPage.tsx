@@ -7,6 +7,7 @@ import FeaturesComparisonTable from '../features/membership/FeaturesComparisonTa
 import BenefitsSection from '../features/membership/BenefitsSection';
 import FAQSection from '../features/membership/FAQSection';
 import MembershipCTA from '../features/membership/MembershipCTA';
+import { paymentService } from '../services/paymentService';
 
 const MembershipPage: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ const MembershipPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editMembership, setEditMembership] = useState<Membership | null>(null);
   const [form, setForm] = useState<Partial<Membership>>({ name: '', price: 0, features: [] });
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMemberships();
@@ -75,11 +77,20 @@ const MembershipPage: React.FC = () => {
     }
   };
 
-  const handleUpgrade = (planId: string) => {
-    // Integrate with payment API endpoint
-    // Example: call a function to initiate payment with planId
-    // After successful upgrade, you might want to update the selected plan
-    // setSelectedPlan(planId);
+  const handleUpgrade = async (planId: string) => {
+    setPaymentStatus(null);
+    try {
+      setPaymentStatus('Processing payment...');
+      const res = await paymentService.payForMembership(planId);
+      if (res.success) {
+        setPaymentStatus('Payment successful! Membership activated.');
+        fetchMemberships();
+      } else {
+        setPaymentStatus(res.message || 'Payment failed.');
+      }
+    } catch (e: any) {
+      setPaymentStatus(e.message || 'Payment failed.');
+    }
   };
 
   if (loading) {
@@ -104,6 +115,7 @@ const MembershipPage: React.FC = () => {
             </button>
           </div>
         )}
+        {paymentStatus && <div className="text-center text-blue-600 mb-2">{paymentStatus}</div>}
         <MembershipCardsList
           memberships={memberships}
           selectedPlan={selectedPlan}
@@ -112,6 +124,8 @@ const MembershipPage: React.FC = () => {
           onUpgrade={handleUpgrade}
           onEdit={isAdmin ? handleEdit : undefined}
           onDelete={isAdmin ? handleDelete : undefined}
+          isAdmin={isAdmin}
+          isCurrent={membership => user?.membershipId === membership._id}
         />
         <FeaturesComparisonTable memberships={memberships} />
         <BenefitsSection />
