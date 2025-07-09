@@ -10,6 +10,8 @@ interface MembershipCardProps {
   onUpgrade: (planId: string) => void;
   onEdit?: (membership: Membership) => void;
   onDelete?: (id: string) => void;
+  isCurrent?: boolean;
+  isAdmin?: boolean;
 }
 
 const MembershipCard: React.FC<MembershipCardProps> = ({
@@ -20,6 +22,8 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
   onUpgrade,
   onEdit,
   onDelete,
+  isCurrent,
+  isAdmin,
 }) => {
   const getColorClasses = (color: string, variant: 'bg' | 'text' | 'border' | 'gradient') => {
     const colorMap = {
@@ -64,7 +68,7 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
       onClick={() => onSelectPlan(plan._id!)}
     >
       {/* Admin Controls */}
-      {(onEdit || onDelete) && (
+      {(onEdit || onDelete) && isAdmin && (
         <div className="absolute top-4 right-4 flex space-x-2 z-10">
           {onEdit && (
             <button onClick={e => { e.stopPropagation(); onEdit(plan); }} className="p-1 bg-blue-100 hover:bg-blue-200 rounded-full">
@@ -128,20 +132,20 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
             </li>
           ))}
         </ul>
-        {/* Action Button */}
-        <button
-          onClick={() => onUpgrade(plan._id!)}
-          className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
-            plan.name === 'Free'
-              ? 'bg-gray-100 text-gray-600 cursor-default'
-              : selectedPlan === plan._id
-              ? `bg-gradient-to-r ${getColorClasses(plan.color, 'gradient')} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1`
-              : `border-2 ${getColorClasses(plan.color, 'border')} ${getColorClasses(plan.color, 'text')} hover:bg-gradient-to-r hover:${getColorClasses(plan.color, 'gradient')} hover:text-white`
-          }`}
-          disabled={plan.name === 'Free'}
-        >
-          {plan.name === 'Free' ? 'Current Plan' : 'Choose Plan'}
-        </button>
+        {/* Payment/Upgrade Button for non-admin users */}
+        {!isAdmin && (
+          <button
+            onClick={e => { e.stopPropagation(); onUpgrade(plan._id!); }}
+            className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+              isCurrent
+                ? 'bg-gray-100 text-gray-600 cursor-default'
+                : `bg-gradient-to-r ${getColorClasses(plan.color, 'gradient')} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1`
+            }`}
+            disabled={isCurrent}
+          >
+            {isCurrent ? 'Current Plan' : 'Buy/Upgrade'}
+          </button>
+        )}
       </div>
     </div>
   );
