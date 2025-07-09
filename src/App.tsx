@@ -1,7 +1,8 @@
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import Navigation from './pages/Navigation';
+import Navigation from './layouts/Navigation';
+import Footer from './layouts/Footer';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Lazy load components for better performance
@@ -29,7 +30,7 @@ function App() {
           {/* Public routes - with navigation */}
           <Route path="/*" element={
             <>
-              <Navigation currentPage="home" onPageChange={() => {}} />
+              <Navigation />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/properties" element={<AllPropertiesPage onPropertyClick={() => {}} />} />
@@ -47,6 +48,7 @@ function App() {
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              <Footer />
             </>
           } />
         </Routes>
