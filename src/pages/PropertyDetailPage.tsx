@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Heart, Share2 } from 'lucide-react';
-import PricingCard from '../components/PropertyDetailPageComponents/PricingCard';
+import PricingCard from '../features/properties/PricingCard';
 import { Property } from '../types';
 
 const PropertyDetailPage: React.FC = () => {

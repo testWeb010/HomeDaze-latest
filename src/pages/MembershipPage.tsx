@@ -6,12 +6,12 @@ import React, { useState, useEffect } from 'react';
 import { Membership } from '../types';
 
 // Import the new components
-import MembershipHero from '../components/Membership/MembershipHero';
-import MembershipCardsList from '../components/Membership/MembershipCardsList';
-import FeaturesComparisonTable from '../components/Membership/FeaturesComparisonTable';
-import BenefitsSection from '../components/Membership/BenefitsSection';
-import FAQSection from '../components/Membership/FAQSection';
-import MembershipCTA from '../components/Membership/MembershipCTA';
+import MembershipHero from '../features/membership/MembershipHero';
+import MembershipCardsList from '../features/membership/MembershipCardsList';
+import FeaturesComparisonTable from '../features/membership/FeaturesComparisonTable';
+import BenefitsSection from '../features/membership/BenefitsSection';
+import FAQSection from '../features/membership/FAQSection';
+import MembershipCTA from '../features/membership/MembershipCTA';
 
 const MembershipPage: React.FC = () => {
   // selectedPlan state is kept to highlight the selected card, even if not used for filtering here

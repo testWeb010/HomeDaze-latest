@@ -6,10 +6,10 @@ import LoadingSpinner from './components/LoadingSpinner';
 
 // Lazy load components for better performance
 const LandingPage = lazy(() => import('./pages/LandingPage'));
-const AllPropertiesPage = lazy(() => import('./components/Properties/AllPropertiesPage'));
-const AddPropertyForm = lazy(() => import('./components/AddProperty/AddPropertyForm'));
+const AllPropertiesPage = lazy(() => import('./features/properties/AllPropertiesPage'));
+const AddPropertyForm = lazy(() => import('./features/properties/AddPropertyForm'));
 const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
-const BlogPage = lazy(() => import('./components/Blog/BlogPage'));
+const BlogPage = lazy(() => import('./features/blog/BlogPage'));
 const MembershipPage = lazy(() => import('./pages/MembershipPage'));
 const AdminPanel = lazy(() => import('./components/AdminPannel'));
 
