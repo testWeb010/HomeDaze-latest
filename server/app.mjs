@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -20,6 +19,7 @@ import path from "path";
 import recommendationRouter from "./routes/recommendationRoutes.mjs";
 import { fileURLToPath } from "url";
 import { generateSitemapXML, generateSitemapGzipped } from './utils/sitemapGenerator.mjs';
+import blogRouter from './routes/blogRouter.mjs';
 
 // Support __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -116,6 +116,7 @@ app.use("/api/post", postAdRouter);
 app.use("/api/properties", propertyRouter);
 app.use("/api/payment", requireAuth, cashfree);
 app.use("/api/membership", membershipRouter);
+app.use("/api/blogs", blogRouter);
 
 // Serve frontend build
 app.use(express.static(path.join(__dirname, "dist")));

@@ -1,11 +1,13 @@
 // src/api/authApi.ts
 
-// Define types for request and response data (replace with your actual API types)
+import axios from 'axios';
+
+// Define types for request and response data
 interface AuthResponse {
   success: boolean;
   message: string;
-  token?: string; // Example: JWT token
-  user?: any; // Example: User data (replace 'any')
+  token?: string;
+  user?: any;
 }
 
 interface SignInPayload {
@@ -31,28 +33,31 @@ interface SendOtpPayload {
   phone: string;
 }
 
+// Base API URL
+const API_BASE_URL = '/api/auth';
+
+// Create axios instance with credentials enabled for cookies
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // Important for sending/receiving cookies
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 /**
  * Calls the sign-in API endpoint.
  * @param payload - User credentials (email/password or phone/otp).
  * @returns A promise resolving to the authentication response.
  */
 export const signIn = async (payload: SignInPayload): Promise<AuthResponse> => {
-  console.log('Calling signIn API with payload:', payload);
-  // TODO: Replace with actual API call (e.g., using fetch or axios)
-  // Example: const response = await fetch('/api/auth/signin', { method: 'POST', body: JSON.stringify(payload) });
-  // Example: const data = await response.json();
-  // Example: return data as AuthResponse;
-
-  // --- Simulation (Remove this section when implementing actual API call) ---
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-  if (payload.email === 'test@example.com' && payload.password === 'password123') {
-    return { success: true, message: 'Sign in successful', token: 'fake-token', user: { name: 'Test User' } };
-  } else if (payload.phone === '1234567890' && payload.otp === '123456') {
-     return { success: true, message: 'Sign in successful', token: 'fake-token', user: { name: 'Test User Phone' } };
-  } else {
-    throw new Error('Invalid credentials or OTP');
+  try {
+    const response = await apiClient.post('/login', payload);
+    return response.data;
+  } catch (error: any) {
+    console.error('Sign in error:', error);
+    throw new Error(error.response?.data?.message || 'Sign in failed');
   }
-  // --- End Simulation ---
 };
 
 /**
@@ -61,20 +66,13 @@ export const signIn = async (payload: SignInPayload): Promise<AuthResponse> => {
  * @returns A promise resolving to the authentication response.
  */
 export const signUp = async (payload: SignUpPayload): Promise<AuthResponse> => {
-  console.log('Calling signUp API with payload:', payload);
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch('/api/auth/signup', { method: 'POST', body: JSON.stringify(payload) });
-  // Example: const data = await response.json();
-  // Example: return data as AuthResponse;
-
-  // --- Simulation (Remove this section) ---
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  if (payload.email && payload.password && payload.password === payload.confirmPassword) {
-     return { success: true, message: 'Sign up successful', user: { name: payload.name, email: payload.email } };
-  } else {
-     throw new Error('Sign up failed');
+  try {
+    const response = await apiClient.post('/register', payload);
+    return response.data;
+  } catch (error: any) {
+    console.error('Sign up error:', error);
+    throw new Error(error.response?.data?.message || 'Sign up failed');
   }
-  // --- End Simulation ---
 };
 
 /**
@@ -83,20 +81,13 @@ export const signUp = async (payload: SignUpPayload): Promise<AuthResponse> => {
  * @returns A promise resolving to the authentication response.
  */
 export const forgotPassword = async (payload: ForgotPasswordPayload): Promise<AuthResponse> => {
-  console.log('Calling forgotPassword API with payload:', payload);
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify(payload) });
-  // Example: const data = await response.json();
-  // Example: return data as AuthResponse;
-
-   // --- Simulation (Remove this section) ---
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  if (payload.email === 'test@example.com') {
-     return { success: true, message: 'Password reset link sent' };
-  } else {
-     throw new Error('Email not found');
+  try {
+    const response = await apiClient.post('/forgot-password', payload);
+    return response.data;
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    throw new Error(error.response?.data?.message || 'Password reset request failed');
   }
-  // --- End Simulation ---
 };
 
 /**
@@ -105,20 +96,13 @@ export const forgotPassword = async (payload: ForgotPasswordPayload): Promise<Au
  * @returns A promise resolving to the authentication response.
  */
 export const sendOtp = async (payload: SendOtpPayload): Promise<AuthResponse> => {
-   console.log('Calling sendOtp API with payload:', payload);
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch('/api/auth/send-otp', { method: 'POST', body: JSON.stringify(payload) });
-  // Example: const data = await response.json();
-  // Example: return data as AuthResponse;
-
-   // --- Simulation (Remove this section) ---
-   await new Promise(resolve => setTimeout(resolve, 1000));
-   if (payload.phone === '1234567890') {
-      return { success: true, message: 'OTP sent successfully' };
-   } else {
-      throw new Error('Failed to send OTP');
-   }
-   // --- End Simulation ---
+  try {
+    const response = await apiClient.post('/send-otp', payload);
+    return response.data;
+  } catch (error: any) {
+    console.error('Send OTP error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to send OTP');
+  }
 };
 
 /**
@@ -127,7 +111,20 @@ export const sendOtp = async (payload: SendOtpPayload): Promise<AuthResponse> =>
  * @returns void (typically redirects user or opens a popup)
  */
 export const socialAuth = (provider: 'google' | 'facebook' | 'linkedin' | 'twitter'): void => {
-  console.log(`Initiating social auth with ${provider}`);
-  // TODO: Implement actual social authentication flow (e.g., redirect to backend auth route)
-  // Example: window.location.href = `/api/auth/${provider}`;
+  // Redirect to backend social auth route
+  window.location.href = `/api/auth/${provider}`;
+};
+
+/**
+ * Logout user by clearing the authentication cookie
+ * @returns A promise resolving to the logout response
+ */
+export const logout = async (): Promise<AuthResponse> => {
+  try {
+    const response = await apiClient.post('/logout');
+    return response.data;
+  } catch (error: any) {
+    console.error('Logout error:', error);
+    throw new Error(error.response?.data?.message || 'Logout failed');
+  }
 };

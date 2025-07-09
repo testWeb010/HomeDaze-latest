@@ -1,9 +1,11 @@
-import express from "express";
-import { getDb } from "../db/conn.mjs";
+import express from 'express';
+import { cookieAuth } from '../middlewares/cookieAuth.mjs';
+import { getDb } from '../db/conn.mjs';
+import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", cookieAuth, async (req, res) => {
   try {
     const db = getDb().connection;
 

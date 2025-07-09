@@ -3,6 +3,10 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 // API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+if (!import.meta.env.VITE_API_URL) {
+  console.warn('VITE_API_URL environment variable not set. Using default localhost:3001. Ensure this is updated for production.');
+}
+
 // API Response types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -36,13 +40,9 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to add auth token
+// Request interceptor - No need to manually add token with cookie auth
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => {
@@ -66,9 +66,7 @@ apiClient.interceptors.response.use(
     const responseData = error.response?.data as any;
 
     if (status === 401) {
-      // Handle unauthorized - clear token and redirect to login
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      // Handle unauthorized - redirect to login
       window.location.href = '/login';
       customError.message = 'Session expired. Please login again.';
     } else if (status === 403) {

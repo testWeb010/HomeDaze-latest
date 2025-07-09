@@ -54,19 +54,7 @@ export const authService = {
 
   // Login user
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post<AuthResponse>('/api/auth/login', data);
-    
-    // Store auth data in localStorage
-    if (response.success && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      if (response.data.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-      }
-    }
-    
-    return response;
+    return api.post('/api/auth/login', data);
   },
 
   // Logout user
@@ -74,13 +62,7 @@ export const authService = {
     try {
       await api.post('/api/auth/logout');
     } catch (error) {
-      // Continue with logout even if API call fails
       console.error('Logout API error:', error);
-    } finally {
-      // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('refreshToken');
     }
   },
 
@@ -101,74 +83,57 @@ export const authService = {
 
   // Change password (authenticated user)
   changePassword: async (data: ChangePasswordRequest): Promise<ApiResponse<{ message: string }>> => {
-    return api.put('/api/user/change-password', data);
+    return api.put('/api/users/change-password', data);
   },
 
   // Google OAuth - get auth URL
   getGoogleAuthUrl: async (): Promise<ApiResponse<GoogleAuthResponse>> => {
-    return api.get('/api/auth/google-request');
+    return api.get('/api/auth/google');
   },
 
   // Google OAuth - handle callback
   handleGoogleAuth: async (code: string): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post<AuthResponse>('/api/auth/google', { code });
-    
-    // Store auth data in localStorage
-    if (response.success && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      if (response.data.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-      }
-    }
-    
-    return response;
+    return api.post('/api/auth/google/callback', { code });
   },
 
-  // Refresh token
+  // Refresh token - Not needed with cookie-based auth as server handles it
   refreshToken: async (): Promise<ApiResponse<{ token: string }>> => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-    
-    const response = await api.post<{ token: string }>('/api/auth/refresh', { refreshToken });
-    
-    if (response.success && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-    }
-    
-    return response;
+    return api.post('/api/auth/refresh', {});
   },
 
   // Get current user
-  getCurrentUser: (): User | null => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user');
+  getCurrentUser: async (): Promise<User | null> => {
+    try {
+      const response = await api.get<User>('/api/users/me');
+      if (response.success && response.data) {
+        return response.data;
       }
+      return null;
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+      return null;
     }
-    return null;
   },
 
   // Check if user is authenticated
-  isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('authToken');
+  isAuthenticated: async (): Promise<boolean> => {
+    try {
+      const response = await api.get<{ authenticated: boolean }>('/api/auth/check');
+      return response.success && response.data.authenticated === true;
+    } catch (error) {
+      return false;
+    }
   },
 
-  // Get auth token
+  // Get auth token - Not needed with cookie-based auth as cookies are sent automatically
   getToken: (): string | null => {
-    return localStorage.getItem('authToken');
+    // This method is kept for compatibility but isn't used with cookie auth
+    return null;
   },
 
   // Check username availability
   checkUsername: async (username: string): Promise<ApiResponse<{ available: boolean }>> => {
-    return api.get('/api/user/check-username', { username });
+    return api.get('/api/users/check-username', { username });
   },
 
   // Resend verification email

@@ -201,6 +201,14 @@ router.post("/login", authLimiter, async (req, res) => {
     // Generate tokens
     const { token, refreshToken } = generateTokens(user);
     
+    // Set token in a cookie
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     // Format user response
     const userResponse = formatUserResponse(user);
 
