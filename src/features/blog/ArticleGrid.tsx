@@ -1,17 +1,21 @@
 import React from 'react';
-import { BlogPost } from '../../types';
+import { Blog } from '../../services/blogService';
 import BlogPostCard from './BlogPostCard';
 
 interface ArticleGridProps {
-  posts: BlogPost[];
+  posts: Blog[];
   formatDate: (dateString: string) => string;
-  selectedCategory: string; // Assuming this might be needed for the heading
+  selectedCategory: string;
+  onEdit?: (blog: Blog) => void;
+  onDelete?: (id: string) => void;
 }
 
 const ArticleGrid: React.FC<ArticleGridProps> = ({
   posts,
   formatDate,
   selectedCategory,
+  onEdit,
+  onDelete,
 }) => {
   return (
     <div className="lg:col-span-3">
@@ -23,10 +27,9 @@ const ArticleGrid: React.FC<ArticleGridProps> = ({
           {posts.length} articles found
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         {posts.map((post) => (
-          <BlogPostCard key={post.id} post={post} formatDate={formatDate} />
+          <BlogPostCard key={post._id} post={post} formatDate={formatDate} onEdit={onEdit} onDelete={onDelete} />
         ))}
       </div>
     </div>
