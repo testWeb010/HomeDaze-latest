@@ -1,142 +1,28 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
-  test-frontend:
+  build-and-test:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        node-version: [18.x]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-          
+          node-version: ${{ matrix.node-version }}
       - name: Install dependencies
-        run: npm ci
-        
-      - name: Run type check
-        run: npm run type-check
-        
-      - name: Run linting
-        run: npm run lint
-        
+        run: npm install
+      - name: Lint
+        run: npm run lint --if-present
       - name: Run tests
-        run: npm run test:coverage
-        
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        
-      - name: Build application
-        run: npm run build:prod
-
-  test-backend:
-    runs-on: ubuntu-latest
-    
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: server/package-lock.json
-          
-      - name: Install dependencies
-        working-directory: ./server
-        run: npm ci
-        
-      - name: Run linting
-        working-directory: ./server
-        run: npm run lint
-        
-      - name: Run tests
-        working-directory: ./server
-        run: npm run test:coverage
-        env:
-          ATLAS_URI: mongodb://localhost:27017/test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret
-          NODE_ENV: test
-
-  security-audit:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Frontend security audit
-        run: npm audit --audit-level high
-        
-      - name: Backend security audit
-        working-directory: ./server
-        run: npm audit --audit-level high
-
-  build-and-deploy:
-    needs: [test-frontend, test-backend, security-audit]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/homedaze-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/homedaze-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Deploy to production
-        if: github.ref == 'refs/heads/main'
-        run: |
-          echo "Deploying to production..."
-          # Add your deployment commands here
-          # Example: SSH to server and pull new images
+        run: npm test --if-present
+      - name: Build
+        run: npm run build

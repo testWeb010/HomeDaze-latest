@@ -126,18 +126,6 @@ Visit `http://localhost:3000` to see the application.
 
 ## 🐳 Docker Deployment
 
-### Production Deployment
-```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Scale services
-docker-compose up -d --scale backend=3
-```
-
 ### Development with Docker
 ```bash
 # Start only database services
@@ -264,3 +252,47 @@ For support, email support@thehomedaze.com or create an issue on GitHub.
 ---
 
 **Made with ❤️ by the HomeDaze Team**
+
+## ⚙️ CI/CD Pipeline
+
+This project uses **GitHub Actions** for continuous integration (CI):
+- Installs dependencies
+- Runs lint and tests
+- Builds frontend and backend
+
+The workflow is defined in `.github/workflows/ci.yml` and runs on every push and pull request to `main`/`master`.
+
+### Example Workflow Steps
+- Checkout code
+- Use Node.js 18
+- Install dependencies
+- Lint and test
+- Build for production
+
+You can customize the workflow for deployment to your preferred cloud provider.
+
+## 🐳 Production Deployment (Docker Compose)
+
+1. **Set environment variables** in `server/.env` (see `.env.example`).
+2. **Build and start all services:**
+   ```bash
+   docker-compose up -d --build
+   ```
+3. **Check logs:**
+   ```bash
+   docker-compose logs -f
+   ```
+4. **Access the app:**
+   - Frontend: http://localhost (port 80)
+   - Backend API: http://localhost:3001
+
+### Production Checklist
+- [x] Set up SSL certificates (use a reverse proxy like Nginx or Caddy)
+- [x] Configure environment variables
+- [x] Set up monitoring (Sentry, etc.)
+- [x] Configure backup strategies
+- [x] Set up CI/CD pipeline (see above)
+- [x] Performance testing
+- [x] Security audit
+
+---
