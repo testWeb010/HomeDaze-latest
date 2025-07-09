@@ -21,16 +21,25 @@ cloudinary.v2.config({
 // Configure multer for file uploads
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary.v2,
-  params: {
-    folder: 'homedaze/properties',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 800, height: 600, crop: 'limit', quality: 'auto' }],
+  params: async (req, file) => {
+    if (file.mimetype.startsWith('video/')) {
+      return {
+        folder: 'homedaze/properties/videos',
+        resource_type: 'video',
+        allowed_formats: ['mp4', 'webm', 'mov'],
+      };
+    }
+    return {
+      folder: 'homedaze/properties',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      transformation: [{ width: 800, height: 600, crop: 'limit', quality: 'auto' }],
+    };
   },
 });
 
 const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit for video
 });
 
 // Helper function to build standard response
@@ -403,17 +412,19 @@ router.get("/user/:userId", requireAuth, validateObjectId, async (req, res) => {
   }
 });
 
-// POST /api/properties - Create new property
-router.post("/", requireAuth, upload.array('images', 10), validateProperty, async (req, res) => {
+// POST /api/properties - Create new property (support images and video)
+router.post("/", requireAuth, upload.fields([{ name: 'images', maxCount: 10 }, { name: 'video', maxCount: 1 }]), validateProperty, async (req, res) => {
   try {
     const db = getDb().connection;
     const userId = new ObjectId(req.user.id);
-    
+    const images = req.files && req.files['images'] ? req.files['images'].map(file => file.path) : [];
+    const video = req.files && req.files['video'] && req.files['video'][0] ? req.files['video'][0].path : null;
     // Extract property data
     const propertyData = {
       ...req.body,
       userId,
-      images: req.files ? req.files.map(file => file.path) : [],
+      images,
+      video,
       isActive: true,
       verified: false,
       featured: false,
@@ -421,7 +432,6 @@ router.post("/", requireAuth, upload.array('images', 10), validateProperty, asyn
       createdAt: new Date(),
       updatedAt: new Date()
     };
-
     // Convert string arrays back to arrays
     if (typeof propertyData.rules === 'string') {
       propertyData.rules = JSON.parse(propertyData.rules);
@@ -429,11 +439,8 @@ router.post("/", requireAuth, upload.array('images', 10), validateProperty, asyn
     if (typeof propertyData.nearbyPlaces === 'string') {
       propertyData.nearbyPlaces = JSON.parse(propertyData.nearbyPlaces);
     }
-
     const result = await db.collection("properties").insertOne(propertyData);
-    
     const property = await db.collection("properties").findOne({ _id: result.insertedId });
-
     res.status(201).json(buildResponse(true, property, "Property created successfully"));
   } catch (error) {
     console.error("Error creating property:", error);
@@ -529,32 +536,31 @@ router.patch("/:id/status", requireAuth, validateObjectId, async (req, res) => {
   }
 });
 
-// POST /api/properties/:id/media - Upload additional media
-router.post("/:id/media", requireAuth, upload.array('images', 5), validateObjectId, async (req, res) => {
+// POST /api/properties/:id/media - Upload additional media (support images and video)
+router.post("/:id/media", requireAuth, upload.fields([{ name: 'images', maxCount: 5 }, { name: 'video', maxCount: 1 }]), validateObjectId, async (req, res) => {
   try {
     const db = getDb().connection;
     const { id } = req.params;
     const userId = new ObjectId(req.user.id);
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json(buildResponse(false, null, "No images provided"));
+    const imageUrls = req.files && req.files['images'] ? req.files['images'].map(file => file.path) : [];
+    const videoUrl = req.files && req.files['video'] && req.files['video'][0] ? req.files['video'][0].path : null;
+    const update = {
+      $set: { updatedAt: new Date() },
+    };
+    if (imageUrls.length) {
+      update.$push = { images: { $each: imageUrls } };
     }
-
-    const imageUrls = req.files.map(file => file.path);
-
+    if (videoUrl) {
+      update.$set.video = videoUrl;
+    }
     const result = await db.collection("properties").updateOne(
       { _id: new ObjectId(id), userId },
-      { 
-        $push: { images: { $each: imageUrls } },
-        $set: { updatedAt: new Date() }
-      }
+      update
     );
-
     if (result.matchedCount === 0) {
       return res.status(404).json(buildResponse(false, null, "Property not found or unauthorized"));
     }
-
-    res.json(buildResponse(true, { urls: imageUrls }, "Images uploaded successfully"));
+    res.json(buildResponse(true, { images: imageUrls, video: videoUrl }, "Media uploaded successfully"));
   } catch (error) {
     console.error("Error uploading media:", error);
     res.status(500).json(buildResponse(false, null, "Failed to upload media", error.message));

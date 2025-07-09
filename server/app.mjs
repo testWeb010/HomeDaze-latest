@@ -20,6 +20,7 @@ import path from "path";
 import recommendationRouter from "./routes/recommendationRoutes.mjs";
 import { fileURLToPath } from "url";
 import { generateSitemapXML, generateSitemapGzipped } from './utils/sitemapGenerator.mjs';
+import blogRouter from "./routes/blogRouter.mjs";
 
 // Support __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -115,7 +116,11 @@ app.use("/api/user", requireAuth, userRouter);
 app.use("/api/post", postAdRouter);
 app.use("/api/properties", propertyRouter);
 app.use("/api/payment", requireAuth, cashfree);
-app.use("/api/membership", membershipRouter);
+app.use("/api/blog", blogRouter);
+app.use("/api/membership", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/") return membershipRouter(req, res, next);
+  return requireAuth(req, res, () => membershipRouter(req, res, next));
+});
 
 // Serve frontend build
 app.use(express.static(path.join(__dirname, "dist")));
