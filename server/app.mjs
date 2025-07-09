@@ -20,6 +20,9 @@ import path from "path";
 import recommendationRouter from "./routes/recommendationRoutes.mjs";
 import { fileURLToPath } from "url";
 import { generateSitemapXML, generateSitemapGzipped } from './utils/sitemapGenerator.mjs';
+import blogRouter from "./routes/blogRouter.mjs";
+import chatRouter from "./routes/chatRouter.mjs";
+import Message from "./models/message.mjs";
 
 // Support __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -115,7 +118,12 @@ app.use("/api/user", requireAuth, userRouter);
 app.use("/api/post", postAdRouter);
 app.use("/api/properties", propertyRouter);
 app.use("/api/payment", requireAuth, cashfree);
-app.use("/api/membership", membershipRouter);
+app.use("/api/blog", blogRouter);
+app.use("/api/chat", requireAuth, chatRouter);
+app.use("/api/membership", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/") return membershipRouter(req, res, next);
+  return requireAuth(req, res, () => membershipRouter(req, res, next));
+});
 
 // Serve frontend build
 app.use(express.static(path.join(__dirname, "dist")));
@@ -126,6 +134,25 @@ app.get("*", (req, res) => {
 // Socket.io
 io.on("connection", (socket) => {
   console.log("A user connected");
+
+  // Join user room for private messaging
+  socket.on("join", (userId) => {
+    socket.join(userId);
+  });
+
+  // Handle sending a message
+  socket.on("sendMessage", async (data) => {
+    const { sender, recipient, content, chatType } = data;
+    try {
+      const message = await Message.create({ sender, recipient, content, chatType });
+      // Emit to recipient if online
+      io.to(recipient).emit("receiveMessage", message);
+      // Optionally emit to sender for confirmation
+      socket.emit("messageSent", message);
+    } catch (err) {
+      socket.emit("error", { error: "Failed to send message" });
+    }
+  });
 
   socket.on("disconnect", () => {
     console.log("User disconnected");

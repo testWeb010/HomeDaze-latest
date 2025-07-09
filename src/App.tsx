@@ -1,17 +1,6 @@
-import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import Navigation from './pages/Navigation';
-import LoadingSpinner from './components/LoadingSpinner';
-
-// Lazy load components for better performance
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const AllPropertiesPage = lazy(() => import('./components/Properties/AllPropertiesPage'));
-const AddPropertyForm = lazy(() => import('./components/AddProperty/AddPropertyForm'));
-const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
-const BlogPage = lazy(() => import('./components/Blog/BlogPage'));
-const MembershipPage = lazy(() => import('./pages/MembershipPage'));
-const AdminPanel = lazy(() => import('./components/AdminPannel'));
+import AppRoutes from './routes';
 
 function App() {
   return (
@@ -19,38 +8,20 @@ function App() {
       <Helmet>
         <title>HomeDaze - Find Your Dream Home</title>
         <meta name="description" content="Premium real estate platform offering verified properties and seamless rental experience." />
+        <link rel="canonical" href="https://thehomedaze.com/" />
+        {/* Open Graph */}
+        <meta property="og:title" content="HomeDaze - Find Your Dream Home" />
+        <meta property="og:description" content="Premium real estate platform offering verified properties and seamless rental experience." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://thehomedaze.com/" />
+        <meta property="og:image" content="https://thehomedaze.com/og-image.jpg" />
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="HomeDaze - Find Your Dream Home" />
+        <meta name="twitter:description" content="Premium real estate platform offering verified properties and seamless rental experience." />
+        <meta name="twitter:image" content="https://thehomedaze.com/og-image.jpg" />
       </Helmet>
-      
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          {/* Admin routes - no navigation */}
-          <Route path="/admin/*" element={<AdminPanel />} />
-          
-          {/* Public routes - with navigation */}
-          <Route path="/*" element={
-            <>
-              <Navigation currentPage="home" onPageChange={() => {}} />
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/properties" element={<AllPropertiesPage onPropertyClick={() => {}} />} />
-                <Route path="/add-property" element={<AddPropertyForm />} />
-                <Route path="/property/:id" element={<PropertyDetailPage />} />
-                <Route path="/blog" element={<BlogPage />} />
-                <Route path="/membership" element={<MembershipPage />} />
-                <Route path="/chat" element={
-                  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                    <div className="text-center">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-4">Chat Feature Coming Soon</h2>
-                      <p className="text-gray-600">We're working on bringing you the best chat experience with property owners.</p>
-                    </div>
-                  </div>
-                } />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </>
-          } />
-        </Routes>
-      </Suspense>
+      <AppRoutes />
     </div>
   );
 }
