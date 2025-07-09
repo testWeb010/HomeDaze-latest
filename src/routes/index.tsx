@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Navigation from '../layouts/Navigation';
 import Footer from '../layouts/Footer';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ChatInbox from '../features/chat/ChatInbox';
+import ChatConversation from '../features/chat/ChatConversation';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('../pages/LandingPage'));
@@ -29,14 +31,8 @@ const AppRoutes: React.FC = () => (
             <Route path="/property/:id" element={<PropertyDetailPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/membership" element={<MembershipPage />} />
-            <Route path="/chat" element={
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Chat Feature Coming Soon</h2>
-                  <p className="text-gray-600">We're working on bringing you the best chat experience with property owners.</p>
-                </div>
-              </div>
-            } />
+            <Route path="/chat" element={<ChatInbox />} />
+            <Route path="/chat/:userId" element={<ChatConversation />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Footer />

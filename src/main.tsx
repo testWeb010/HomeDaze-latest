@@ -25,15 +25,15 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
   );
 }
 
-// Register service worker for PWA
+// Register service worker for PWA and push notifications
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => {
+        console.log('Service worker registered:', reg);
       })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
+      .catch(err => {
+        console.error('Service worker registration failed:', err);
       });
   });
 }
