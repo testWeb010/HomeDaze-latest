@@ -1,22 +1,25 @@
 import React from 'react';
-import { Check, Crown, Star, MessageCircle, Users, Gift, Sparkles } from 'lucide-react';
-// Corrected import path for Membership type
-import { Membership } from '../../types';
+import { Check, Crown, Star, MessageCircle, Users, Gift, Sparkles, Edit, Trash2 } from 'lucide-react';
+import { Membership } from '../../services/membershipService';
 
 interface MembershipCardProps {
   plan: Membership;
   selectedPlan: string;
   billingCycle: 'monthly' | 'yearly';
-  onSelectPlan: (planId: string) => void; // Added back
+  onSelectPlan: (planId: string) => void;
   onUpgrade: (planId: string) => void;
+  onEdit?: (membership: Membership) => void;
+  onDelete?: (id: string) => void;
 }
 
 const MembershipCard: React.FC<MembershipCardProps> = ({
   plan,
   selectedPlan,
   billingCycle,
-  onSelectPlan, // Added back
+  onSelectPlan,
   onUpgrade,
+  onEdit,
+  onDelete,
 }) => {
   const getColorClasses = (color: string, variant: 'bg' | 'text' | 'border' | 'gradient') => {
     const colorMap = {
@@ -54,13 +57,27 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
 
   return (
     <div
-      key={plan.id}
+      key={plan._id}
       className={`relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden ${
-        selectedPlan === plan.id ? 'ring-4 ring-blue-500 transform scale-105' : ''
+        selectedPlan === plan._id ? 'ring-4 ring-blue-500 transform scale-105' : ''
       } ${plan.name === 'Premium' ? 'border-2 border-purple-200' : ''}`}
-      // Added onClick to handle plan selection
-      onClick={() => onSelectPlan(plan.id)}
+      onClick={() => onSelectPlan(plan._id!)}
     >
+      {/* Admin Controls */}
+      {(onEdit || onDelete) && (
+        <div className="absolute top-4 right-4 flex space-x-2 z-10">
+          {onEdit && (
+            <button onClick={e => { e.stopPropagation(); onEdit(plan); }} className="p-1 bg-blue-100 hover:bg-blue-200 rounded-full">
+              <Edit className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={e => { e.stopPropagation(); onDelete(plan._id!); }} className="p-1 bg-red-100 hover:bg-red-200 rounded-full">
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          )}
+        </div>
+      )}
       {/* Popular Badge */}
       {plan.name === 'Premium' && (
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -70,7 +87,6 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
           </div>
         </div>
       )}
-
       {/* Plan Header */}
       <div className={`${getColorClasses(plan.color, 'bg')} p-6 text-center`}>
         <div className={`w-16 h-16 bg-gradient-to-r ${getColorClasses(plan.color, 'gradient')} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
@@ -79,9 +95,7 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
           {plan.name === 'Premium' && <Crown className="h-8 w-8 text-white" />}
           {plan.name === 'Pro' && <Sparkles className="h-8 w-8 text-white" />}
         </div>
-
         <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-
         <div className="mb-4">
           <span className="text-4xl font-bold text-gray-900">
             {formatPrice(plan.price)}
@@ -92,7 +106,6 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
             </span>
           )}
         </div>
-
         {plan.chatCredits === -1 ? (
           <div className="flex items-center justify-center space-x-2 text-green-600 font-medium">
             <MessageCircle className="h-5 w-5" />
@@ -105,7 +118,6 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
           </div>
         )}
       </div>
-
       {/* Features List */}
       <div className="p-6">
         <ul className="space-y-4 mb-8">
@@ -116,15 +128,13 @@ const MembershipCard: React.FC<MembershipCardProps> = ({
             </li>
           ))}
         </ul>
-
         {/* Action Button */}
-        {/* The button handles the upgrade action */} {/* The div handles plan selection */} 
         <button
-          onClick={() => onUpgrade(plan.id)}
+          onClick={() => onUpgrade(plan._id!)}
           className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
             plan.name === 'Free'
               ? 'bg-gray-100 text-gray-600 cursor-default'
-              : selectedPlan === plan.id
+              : selectedPlan === plan._id
               ? `bg-gradient-to-r ${getColorClasses(plan.color, 'gradient')} text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1`
               : `border-2 ${getColorClasses(plan.color, 'border')} ${getColorClasses(plan.color, 'text')} hover:bg-gradient-to-r hover:${getColorClasses(plan.color, 'gradient')} hover:text-white`
           }`}
